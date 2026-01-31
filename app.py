@@ -3,10 +3,15 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import random
 
-# 1. Setări de bază
+# Configurare bază
 st.set_page_config(page_title="HERCULE AI DJ", layout="wide")
 
-# 2. Conectare la Spotify cu permisiuni de scriere
+# Verificăm dacă Secrets sunt încărcate corect
+if "SPOTIPY_CLIENT_ID" not in st.secrets:
+    st.error("Lipsesc setările din Secrets! Te rog să le adaugi în panoul Streamlit.")
+    st.stop()
+
+# Conectare Spotify
 try:
     auth_manager = SpotifyOAuth(
         client_id=st.secrets["SPOTIPY_CLIENT_ID"],
@@ -15,57 +20,38 @@ try:
         scope="user-modify-playback-state user-read-currently-playing playlist-modify-public"
     )
     sp = spotipy.Spotify(auth_manager=auth_manager)
-    
-    # Preluăm ID-ul playlist-ului din Secrets
-    PLAYLIST_ID = st.secrets["PLAYLIST_ID"]
-    playlist_info = sp.playlist(PLAYLIST_ID)
-    p_name = playlist_info['name']
+    p_id = st.secrets["PLAYLIST_ID"]
 except Exception as e:
-    st.error("Eroare la conectare! Verifică SECRETS în Streamlit.")
+    st.error(f"Eroare de configurare: {e}")
     st.stop()
 
-st.title(f"🎧 {p_name} - SMART MODE")
+st.title("🎧 HERCULE AI DJ - LIVE VIBE")
 
+# Interfața
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.subheader("📸 Analiză Vibe Live")
-    img_file = st.camera_input("Zâmbește pentru a adăuga muzică!")
-    
-    if img_file:
-        st.info("🤖 AI DJ analizează poza...")
-        vibe_tags = ["Party Remix", "Dance Hits", "Energy House"]
-        search_query = random.choice(vibe_tags)
-        
-        try:
-            # Căutăm o piesă și o adăugăm în playlist
-            results = sp.search(q=search_query, type='track', limit=1)
-            if results['tracks']['items']:
-                track = results['tracks']['items'][0]
-                sp.playlist_add_items(PLAYLIST_ID, [track['uri']])
-                st.success(f"✅ Adăugat automat: {track['name']}")
-                # Pornește automat playlist-ul să se audă piesa
-                sp.start_playback(context_uri=f"spotify:playlist:{PLAYLIST_ID}")
-        except:
-            st.error("Nu am putut adăuga piesa. Verifică Spotify pe telefon!")
+    img = st.camera_input("📸 Fă o poză să adaugi muzică!")
+    if img:
+        st.info("Analizăm vibe-ul... 🤖")
+        # Căutăm o piesă random de party
+        res = sp.search(q="Party Mix 2026", type='track', limit=10)
+        track = random.choice(res['tracks']['items'])
+        # Adăugăm în playlist
+        sp.playlist_add_items(p_id, [track['uri']])
+        st.success(f"✅ Adăugat în playlist: {track['name']}")
 
 with col2:
-    st.subheader("🎮 Control Muzică")
-    
-    if st.button("▶️ START PLAYLIST"):
+    if st.button("▶️ START MUZICA"):
         try:
-            sp.start_playback(context_uri=f"spotify:playlist:{PLAYLIST_ID}")
-            st.write("Muzica pornește!")
+            sp.start_playback(context_uri=f"spotify:playlist:{p_id}")
+            st.write("Vibe-ul a pornit!")
         except:
-            st.warning("Deschide Spotify pe un dispozitiv!")
+            st.warning("Deschide Spotify pe telefon!")
+            
+    if st.button("⏸️ PAUZA"):
+        try: sp.pause_playback()
+        except: pass
 
-    if st.button("⏸️ PAUZĂ"):
-        try:
-            sp.pause_playback()
-            st.write("Pauză.")
-        except:
-            pass
-
-    st.write("---")
-    st.write(f"**Playlist activ:** {p_name}")
-    st.markdown('<a href="https://p2p.mirotalk.com/join/hercule-dj-party" target="_blank"><button style="width:100%; height:40px; background-color:#1DB954; color:white; border:none; border-radius:5px; cursor:pointer;">PROIECTOR FULL SCREEN</button></a>', unsafe_allow_html=True)
+st.write("---")
+st.markdown('<a href="https://p2p.mirotalk.com/join/hercule-dj-party" target="_blank"><button style="width:100%; height:50px; background-color:#1DB954; color:white; border:none; border-radius:5px; cursor:pointer;">DESCHIDE PROIECTOR</button></a>', unsafe_allow_html=True)
