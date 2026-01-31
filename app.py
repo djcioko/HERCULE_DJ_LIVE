@@ -1,5 +1,5 @@
 import streamlit as st
-importspotipy
+import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 
 # Configurare Pagina
@@ -25,7 +25,6 @@ with col1:
 with col2:
     st.subheader("🎵 Control Muzică")
     
-    # Buton Play
     if st.button("▶️ PORNEȘTE MUZICA"):
         try:
             sp.start_playback()
@@ -33,7 +32,6 @@ with col2:
         except:
             st.error("Deschide Spotify pe telefon/PC mai întâi!")
 
-    # Buton Pause
     if st.button("⏸️ PAUZĂ"):
         try:
             sp.pause_playback()
