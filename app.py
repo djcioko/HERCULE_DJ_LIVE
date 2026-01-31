@@ -1,50 +1,31 @@
 import streamlit as st
-import os
-import json
 
-# Setări pagină DJ
-st.set_page_config(page_title="Hercule AI DJ", layout="wide")
+# Configurare interfață
+st.set_page_config(page_title="HERCULE AI DJ", layout="wide")
 
-# Sistemul de MEMORIE (Persistență) [cite: 2026-01-15]
-STATE_FILE = "state.json"
+st.title("🎧 HERCULE AI DJ - LIVE CONTROL")
 
-def load_state():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
-            return json.load(f)
-    return {"party_active": False, "history": []}
+# Structura pe coloane
+col1, col2 = st.columns([2, 1])
 
-def save_state(state):
-    with open(STATE_FILE, "w") as f:
-        json.dump(state, f)
+with col1:
+    st.subheader("📺 Flux Video Live")
+    # Activează camera web direct în aplicație
+    st.camera_input("Zâmbește pentru AI DJ!")
 
-state = load_state()
-
-st.title("🎧 HERCULE AI DJ - CONTROL CENTER")
-
-# --- SECȚIUNEA PARTY (MIROTALK) ---
-st.subheader("📺 Proiector & Webcam")
-mirotalk_url = "https://p2p.mirotalk.com/join/hercule-dj-party" # Poți schimba numele camerei aici
-
-if st.button("🚀 LANSEAZĂ PARTY MODE (FULL SCREEN)"):
-    state["party_active"] = True
-    save_state(state) [cite: 2026-01-15]
-    # Deschide Mirotalk într-un tab nou
-    st.write(f'<a href="{mirotalk_url}" target="_blank">Click aici pentru a deschide Camera pe tot ecranul!</a>', unsafe_allow_html=True)
-    st.info("După ce se deschide, apasă F11 în noul tab pentru Full Screen pe proiector.")
-
-# --- SECȚIUNEA MEMORIE ---
-st.write("---")
-st.subheader("📁 Istoric fișiere/evenimente")
-# Această listă va fi reținută chiar dacă restartezi aplicația [cite: 2026-01-15]
-if state["history"]:
-    for event in state["history"]:
-        st.write(f"✅ {event}")
-else:
-    st.write("Niciun eveniment memorat momentan.")
-
-# Buton de urgență pentru oprire
-if st.button("Oprește tot și șterge memoria"):
-    save_state({"party_active": False, "history": []}) [cite: 2026-01-15]
-    st.rerun()
+with col2:
+    st.subheader("🎵 Control Party")
+    if st.button("🚀 ACTIVEAZĂ AI DJ MODE"):
+        st.success("AI-ul analizează vibe-ul publicului...")
     
+    st.write("---")
+    st.info("Apasă butonul de mai jos pentru proiector (Full Screen):")
+    
+    # Buton pentru Mirotalk (fără erori de sintaxă)
+    st.markdown("""
+        <a href="https://p2p.mirotalk.com/join/hercule-dj-party" target="_blank">
+            <button style="width:100%; height:50px; background-color:#1DB954; color:white; border:none; border-radius:5px; cursor:pointer; font-weight:bold;">
+                DESCHIDE PROIECTOR (MIROTALK)
+            </button>
+        </a>
+    """, unsafe_allow_html=True)
