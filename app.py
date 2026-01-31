@@ -5,7 +5,7 @@ from spotipy.oauth2 import SpotifyOAuth
 # Configurare Pagina
 st.set_page_config(page_title="HERCULE AI DJ", layout="wide")
 
-# Conectare la Spotify folosind SECRETS setate de tine
+# Conectare la Spotify folosind SECRETS
 auth_manager = SpotifyOAuth(
     client_id=st.secrets["SPOTIPY_CLIENT_ID"],
     client_secret=st.secrets["SPOTIPY_CLIENT_SECRET"],
@@ -29,14 +29,14 @@ with col2:
         try:
             sp.start_playback()
             st.success("Vibe-ul a început!")
-        except:
+        except Exception as e:
             st.error("Deschide Spotify pe telefon/PC mai întâi!")
 
     if st.button("⏸️ PAUZĂ"):
         try:
             sp.pause_playback()
             st.warning("Muzica s-a oprit.")
-        except:
+        except Exception as e:
             st.info("Nu rulează nicio piesă acum.")
     
     st.write("---")
