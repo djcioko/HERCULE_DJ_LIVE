@@ -1,25 +1,17 @@
 import streamlit as st
 import time, random, urllib.parse
-import numpy as np
 from PIL import Image
-import streamlit.components.v1 as components
+import numpy as np
 
-# ================= AI OPTIONAL =================
-try:
-    from deepface import DeepFace
-    AI_READY = True
-except:
-    AI_READY = False
-
-# ================= CONFIG =================
-st.set_page_config(page_title="HERCULE AI - THE BEAST DJ", layout="wide")
+# ========== CONFIG ==========
+st.set_page_config(page_title="HERCULE AI DJ", layout="wide")
 
 st.markdown("""
 <style>
 .main { background:#0e1117; color:white; }
 iframe { border-radius:20px; border:4px solid #1ed760; box-shadow: 0 0 25px #1ed760; }
 .timer-box {
-  font-size: 38px; font-weight: 900; color: #ff4b4b;
+  font-size: 36px; font-weight: 900; color: #ff4b4b;
   text-align: center; border: 3px solid #ff4b4b;
   border-radius: 15px; padding: 12px; margin-bottom: 20px;
 }
@@ -37,25 +29,19 @@ iframe { border-radius:20px; border:4px solid #1ed760; box-shadow: 0 0 25px #1ed
 </style>
 """, unsafe_allow_html=True)
 
-# ================= STATE =================
+# ========== STATE ==========
 if "last_scan" not in st.session_state:
     st.session_state.last_scan = 0
-
 if "song" not in st.session_state:
     st.session_state.song = ""
-
-if "query" not in st.session_state:
-    st.session_state.query = ""
-
 if "emotion" not in st.session_state:
     st.session_state.emotion = "neutral"
+if "yt_query" not in st.session_state:
+    st.session_state.yt_query = ""
 
-if "img_hash" not in st.session_state:
-    st.session_state.img_hash = None
+SCAN_INTERVAL = 120
 
-SCAN_INTERVAL = 120  # secunde
-
-# ================= MUSIC DB =================
+# ========== MUSIC DB ==========
 MUSIC_DB = {
     "happy": [
         "Bruno Mars - Marry You", "Pharrell Williams - Happy", "Daft Punk - Get Lucky",
@@ -87,18 +73,8 @@ MUSIC_DB = {
     ]
 }
 
-# ================= AI ENGINE =================
-def detect_emotion(img):
-    if not AI_READY:
-        return "neutral"
-    try:
-        res = DeepFace.analyze(np.array(img), actions=["emotion"], enforce_detection=False)
-        return res[0]["dominant_emotion"]
-    except:
-        return "neutral"
-
-# ================= UI =================
-st.title("🎰 HERCULE AI — THE ULTIMATE DJ ENGINE")
+# ========== UI ==========
+st.title("🎰 HERCULE AI — DJ VIBE ENGINE")
 
 col1, col2 = st.columns([1, 1.25])
 
@@ -108,47 +84,43 @@ with col1:
 
     cam = st.camera_input("📸 AI EYE ACTIVATED")
     up = st.file_uploader("📁 SAU ÎNCARCĂ POZĂ", type=["jpg", "jpeg", "png"])
-
     source = cam or up
 
     if source:
         img = Image.open(source).convert("RGB")
-
         img_hash = hash(img.tobytes())
-        if img_hash != st.session_state.img_hash:
+
+        if st.session_state.get("img_hash") != img_hash:
             st.session_state.img_hash = img_hash
             st.session_state.last_scan = time.time()
 
-            emotion = detect_emotion(img)
+            emotion = random.choice(list(MUSIC_DB.keys()))
             st.session_state.emotion = emotion
-
-            vibe = emotion if emotion in MUSIC_DB else "neutral"
-            piesa = random.choice(MUSIC_DB[vibe])
-
-            st.session_state.song = piesa
-            st.session_state.query = urllib.parse.quote(piesa)
+            st.session_state.song = random.choice(MUSIC_DB[emotion])
+            st.session_state.yt_query = urllib.parse.quote(st.session_state.song)
 
         st.image(img, width=360)
-        st.markdown(f"### 🎭 Emoție detectată: **{st.session_state.emotion.upper()}**")
+        st.markdown(f"### 🎭 Emoție: **{st.session_state.emotion.upper()}**")
         st.markdown(f"### 🎵 Melodie: **{st.session_state.song}**")
 
-        st.markdown(f"""
-        <a href="https://open.spotify.com/search/{st.session_state.query}" target="_blank" class="btn-spotify">🟢 DESCHIDE ÎN SPOTIFY</a>
-        <a href="https://festify.us/party/-OMkDNoyn7nohBDBnLWm" target="_blank" class="btn-festify">🔥 DESCHIDE FESTIFY PARTY</a>
-        """, unsafe_allow_html=True)
+        if st.session_state.song:
+            q = urllib.parse.quote(st.session_state.song)
+            st.markdown(f"""
+            <a href="https://open.spotify.com/search/{q}" target="_blank" class="btn-spotify">🟢 DESCHIDE ÎN SPOTIFY</a>
+            <a href="https://festify.us/party/-OMkDNoyn7nohBDBnLWm" target="_blank" class="btn-festify">🔥 DESCHIDE FESTIFY PARTY</a>
+            """, unsafe_allow_html=True)
 
 with col2:
-    st.subheader("📺 YouTube Player (Auto Mode)")
-    if st.session_state.query:
-        yt_url = f"https://www.youtube.com/embed?listType=search&list={st.session_state.query}&autoplay=1"
+    st.subheader("📺 YouTube Player LIVE")
+    if st.session_state.yt_query:
+        yt_url = f"https://www.youtube.com/embed?listType=search&list={st.session_state.yt_query}"
         st.markdown(
             f'<iframe width="100%" height="460" src="{yt_url}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>',
             unsafe_allow_html=True
         )
-        st.success(f"▶ SE REDĂ: {st.session_state.song}")
     else:
-        st.info("Aștept scanarea vizuală...")
+        st.info("Aștept scanarea pentru video...")
 
-# ================= TIMER REFRESH CLEAN =================
+# Refresh soft pentru timer
 time.sleep(1)
 st.rerun()
