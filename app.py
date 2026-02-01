@@ -1,122 +1,228 @@
-import streamlit as st
-import time, random, urllib.parse
-import numpy as np
-from PIL import Image
-from deepface import DeepFace
-import spotipy
-from spotipy.oauth2 import SpotifyOAuth
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <title>MV STUDIO PRO – STABLE FIX</title>
+  <style>
+    body {
+      margin: 0;
+      background: #0b0b0b;
+      color: white;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
+    }
 
-# ================= CONFIG =================
-st.set_page_config("HERCULE AI DJ - SMART VIBE", layout="wide")
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at center, #151515, #050505);
+    }
 
-# ================= STYLE =================
-st.markdown("""
-<style>
-.main { background:#0e1117; color:white; }
-iframe { border-radius:20px; border:4px solid #1ed760; box-shadow: 0px 0px 20px #1ed760; }
-.btn a {
- display:block; padding:12px; border-radius:25px;
- text-align:center; font-weight:bold; color:white;
- text-decoration:none; margin-bottom:10px;
+    /* CAMERA CERC */
+    #camera-wrapper {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 280px;
+      height: 280px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      overflow: hidden;
+      border: 4px solid #00ffcc;
+      box-shadow: 0 0 25px #00ffcc88;
+      background: black;
+    }
+
+    #camera {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* VUMETRU */
+    #vumeter-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 340px;
+      height: 340px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* TEXT DRAG */
+    .draggable {
+      position: absolute;
+      cursor: move;
+      font-size: 28px;
+      font-weight: bold;
+      color: #00ffcc;
+      text-shadow: 0 0 10px black;
+      user-select: none;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111;
+      padding: 10px 16px;
+      border-radius: 12px;
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 0 20px #000;
+    }
+
+    button {
+      background: #00ffcc;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    input {
+      padding: 6px;
+      border-radius: 6px;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+
+<div id="stage">
+
+  <!-- CAMERA -->
+  <div id="camera-wrapper">
+    <video id="camera" autoplay muted playsinline></video>
+  </div>
+
+  <!-- VUMETRU -->
+  <div id="vumeter-container">
+    <canvas id="vumeter"></canvas>
+  </div>
+
+  <!-- TEXT PERSONALIZAT -->
+  <div id="customText" class="draggable" style="top: 20%; left: 20%;">
+    MV STUDIO PRO LIVE
+  </div>
+
+</div>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <input id="textInput" placeholder="Text nou..." />
+  <button onclick="updateText()">Set Text</button>
+  <button onclick="toggleCamera()">Camera ON/OFF</button>
+</div>
+
+<script>
+/* ================= CAMERA ================= */
+const video = document.getElementById("camera");
+let stream = null;
+
+async function startCamera() {
+  stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  video.srcObject = stream;
 }
-.spotify { background:#1DB954; }
-.festify { background:#f25c05; }
-</style>
-""", unsafe_allow_html=True)
 
-# ================= SPOTIFY AUTH (Opțional) =================
-# Dacă vrei adăugare automată, vei completa aceste date mâine
-SPOTIFY_CLIENT_ID = "YOUR_ID"
-SPOTIFY_CLIENT_SECRET = "YOUR_SECRET"
-REDIRECT_URI = "http://localhost:8501"
-
-sp = None # Dezactivat până la configurare
-
-# ================= SESSION =================
-if "last_time" not in st.session_state: st.session_state.last_time = time.time()
-if "song" not in st.session_state: st.session_state.song = ""
-if "query" not in st.session_state: st.session_state.query = ""
-
-# ================= MUSIC DB (Lista ta de 100 integrată pe vibe-uri) =================
-MUSIC = {
-    "happy": ["Bruno Mars - Marry You", "Pharrell Williams - Happy", "Shakira - Waka Waka", "Andra - Iubirea Schimba Tot", "O-Zone - Dragostea Din Tei", "Voltaj - 20 de ani"],
-    "angry": ["AC/DC - Thunderstruck", "AC/DC - Highway to Hell", "Metallica - Enter Sandman", "B.U.G. Mafia - Sa Cante Trompetele", "Eminem - Lose Yourself"],
-    "sad": ["Adele - Someone Like You", "Cargo - Daca ploaia s-ar opri", "Holograf - Sa nu-mi iei niciodata dragostea", "Iris - De vei pleca"],
-    "neutral": ["Daft Punk - Get Lucky", "ABBA - Dancing Queen", "Dan Spataru - Drumurile noastre", "Smiley - Oarecare", "Loredana - Zig Zagga", "3 Sud Est - Amintirile"],
-    "surprise": ["The Weeknd - Blinding Lights", "Calvin Harris - Summer", "Zdob si Zdup - Moldoveni s-au nascut"]
+function stopCamera() {
+  if (!stream) return;
+  stream.getTracks().forEach(t => t.stop());
+  stream = null;
 }
 
-FASHION_MAP = {"dark": "angry", "bright": "happy", "neutral": "neutral"}
+function toggleCamera() {
+  stream ? stopCamera() : startCamera();
+}
 
-# ================= AI LOGIC =================
-def detect_emotion(img):
-    try:
-        res = DeepFace.analyze(np.array(img), actions=["emotion"], enforce_detection=False)
-        return res[0]["dominant_emotion"]
-    except: return "neutral"
+startCamera();
 
-def detect_fashion(img):
-    avg = np.mean(np.array(img))
-    if avg < 85: return "dark"
-    if avg > 170: return "bright"
-    return "neutral"
+/* ================= AUDIO / VUMETRU ================= */
+const canvas = document.getElementById("vumeter");
+const ctx = canvas.getContext("2d");
 
-def choose_song(emotion, fashion):
-    vibe = FASHION_MAP.get(fashion, emotion)
-    piese_disponibile = MUSIC.get(vibe, MUSIC["neutral"])
-    return random.choice(piese_disponibile)
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
-# ================= TIMER LOGIC (120s) =================
-elapsed = time.time() - st.session_state.last_time
-timp_ramas = max(0, 120 - int(elapsed))
+let audioCtx, analyser, dataArray;
 
-if timp_ramas <= 0:
-    st.session_state.last_time = time.time()
-    all_songs = sum(MUSIC.values(), [])
-    piesa_noua = random.choice(all_songs)
-    st.session_state.song = piesa_noua
-    st.session_state.query = urllib.parse.quote(piesa_noua)
-    st.rerun()
+navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+  audioCtx = new AudioContext();
+  const source = audioCtx.createMediaStreamSource(stream);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 256;
+  dataArray = new Uint8Array(analyser.frequencyBinCount);
+  source.connect(analyser);
+  drawVumeter();
+});
 
-# ================= UI =================
-st.title("🎧 HERCULE AI – SMART DJ")
+function drawVumeter() {
+  requestAnimationFrame(drawVumeter);
+  analyser.getByteFrequencyData(dataArray);
 
-c1, c2 = st.columns(2)
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-with c1:
-    st.subheader("📸 Senzor Vizual & Fashion")
-    st.progress(min(elapsed / 120, 1.0), text=f"Timp până la auto-schimbare: {timp_ramas}s")
+  const bars = 64;
+  const radius = canvas.width / 2 - 10;
+  const center = canvas.width / 2;
 
-    cam = st.camera_input("Poză live")
-    up = st.file_uploader("Upload poză", type=["jpg","png","jpeg"])
-    src = cam or up
+  for (let i = 0; i < bars; i++) {
+    const value = dataArray[i] / 255;
+    const barHeight = radius * value;
+    const angle = (i / bars) * Math.PI * 2;
 
-    if src:
-        img = Image.open(src).convert("RGB")
-        st.image(img, width=350)
+    const x1 = center + Math.cos(angle) * radius;
+    const y1 = center + Math.sin(angle) * radius;
+    const x2 = center + Math.cos(angle) * (radius + barHeight);
+    const y2 = center + Math.sin(angle) * (radius + barHeight);
 
-        emotion = detect_emotion(img)
-        fashion = detect_fashion(img)
-        song = choose_song(emotion, fashion)
+    ctx.strokeStyle = `hsl(${i * 6}, 100%, 50%)`;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+}
 
-        st.session_state.song = song
-        st.session_state.query = urllib.parse.quote(song)
-        st.session_state.last_time = time.time()
+/* ================= DRAG TEXT ================= */
+const textEl = document.getElementById("customText");
+let dragging = false;
+let offsetX, offsetY;
 
-        st.markdown(f"### 🎭 Emoție: **{emotion}** | 👕 Fashion: **{fashion}**")
-        st.markdown(f"### 🎵 Melodie: **{song}**")
+textEl.addEventListener("mousedown", e => {
+  dragging = true;
+  offsetX = e.clientX - textEl.offsetLeft;
+  offsetY = e.clientY - textEl.offsetTop;
+});
 
-        st.markdown(f"""
-        <div class="btn spotify"><a href="https://open.spotify.com/search/{st.session_state.query}" target="_blank">🟢 CAUTĂ PE SPOTIFY</a></div>
-        <div class="btn festify"><a href="https://festify.us/party/-OMkDNoyn7nohBDBnLWm" target="_blank">🔥 DESCHIDE FESTIFY</a></div>
-        """, unsafe_allow_html=True)
+document.addEventListener("mousemove", e => {
+  if (!dragging) return;
+  textEl.style.left = (e.clientX - offsetX) + "px";
+  textEl.style.top = (e.clientY - offsetY) + "px";
+});
 
-with c2:
-    st.subheader("📺 YouTube Player (Stabilitate Maximă)")
-    if st.session_state.query:
-        # Folosim metoda listType=search pentru stabilitate 100%
-        yt = f"https://www.youtube.com/embed?listType=search&list={st.session_state.query}&autoplay=1"
-        st.markdown(f'<iframe width="100%" height="400" src="{yt}" allow="autoplay; encrypted-media" allowfullscreen></iframe>', unsafe_allow_html=True)
-        st.success(f"Rulează: {st.session_state.song}")
+document.addEventListener("mouseup", () => dragging = false);
 
-st.info("Sistemul detectează automat vibe-ul și schimbă muzica la 2 minute!")
+/* ================= TEXT UPDATE ================= */
+function updateText() {
+  const val = document.getElementById("textInput").value;
+  if (val.trim()) textEl.textContent = val;
+}
+</script>
+
+</body>
+</html>
