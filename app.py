@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MV STUDIO PRO – STABLE FIX</title>
+<title>MV STUDIO PRO - STABLE FIX</title>
 
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
@@ -138,14 +138,14 @@ label{font-size:9px;color:#888}
     <button id="btn-v" class="btn st-off" onclick="Media.toggleLayer('bg-v','btn-v')">VIDEO: OFF</button>
     <button id="btn-i" class="btn st-off" onclick="Media.toggleLayer('bg-i','btn-i')">FOTO: OFF</button>
     <button id="btn-s" class="btn st-off" onclick="Media.toggleLayer('bg-s','btn-s')">SLIDE: OFF</button>
-    <label>Viteză Slide:</label><input type="range" min="1" max="15" value="3" id="s-spd">
+    <label>Viteza Slide:</label><input type="range" min="1" max="15" value="3" id="s-spd">
   </div>
 
   <div class="panel">
     <h3>3. WEBCAM & AI CUT</h3>
     <button class="btn btn-blue" onclick="Camera.start()">START CAMERA</button>
     <button id="btn-cam" class="btn st-off" onclick="Camera.toggle()">AI CUT / CAM: OFF</button>
-    <label>Mărime:</label><input type="range" min="200" max="1500" value="420" oninput="vSrc.style.width=this.value+'px'">
+    <label>Marime:</label><input type="range" min="200" max="1500" value="420" oninput="vSrc.style.width=this.value+'px'">
     <label>Opacitate:</label><input type="range" min="0" max="1" step="0.1" value="1" oninput="camBox.style.opacity=this.value">
   </div>
 
@@ -153,17 +153,17 @@ label{font-size:9px;color:#888}
     <h3>4. CERC VUMETRU</h3>
     <button id="btn-png" class="btn st-off" onclick="Circle.toggleLogo()">LOGO CERC: OFF</button>
     <input type="file" accept="image/*" onchange="Circle.loadLogo(this)">
-    <label>Mărime Cerc:</label><input type="range" min="0.5" max="2" step="0.1" value="1" id="v-scale">
+    <label>Marime Cerc:</label><input type="range" min="0.5" max="2" step="0.1" value="1" id="v-scale">
   </div>
 
   <div class="panel">
     <h3>5. TEXT & FIREBASE</h3>
-    <label>Mărime Text Ecran:</label>
+    <label>Marime Text Ecran:</label>
     <input type="range" min="20" max="150" value="40" oninput="branding.style.fontSize=this.value+'px'">
     <hr class="border-gray-700 my-1">
-    <label>Mărime Mesaj:</label>
+    <label>Marime Mesaj:</label>
     <input type="range" min="15" max="80" value="26" oninput="document.documentElement.style.setProperty('--msg-size',this.value+'px')">
-    <label>Timp Afișare:</label>
+    <label>Timp Afisare:</label>
     <input type="range" min="2" max="30" value="8" id="m-time">
   </div>
 </div>
@@ -374,7 +374,7 @@ const Firebase = {
       const d = snap.val() || {};
       const box = document.getElementById('msg-box');
       document.getElementById('msg-user').innerText = d.author || 'INVITAT';
-      document.getElementById('msg-txt').innerText = `"${d.text || ''}"`;
+      document.getElementById('msg-txt').innerText = '"' + (d.text || '') + '"';
       box.style.display = 'block';
       if (msgTimer) clearTimeout(msgTimer);
       msgTimer = setTimeout(() => box.style.display = 'none',
@@ -385,13 +385,13 @@ const Firebase = {
 };
 
 /* =====================
-   DRAG ENGINE – FIXED
+   DRAG ENGINE - FIXED
 ===================== */
 function makeDraggable(el) {
   let startX, startY, elX, elY;
 
   el.addEventListener('mousedown', e => {
-    if (['INPUT', 'BUTTON', 'TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable) return;
+    if (['INPUT','BUTTON','TEXTAREA'].includes(e.target.tagName) || e.target.isContentEditable) return;
     e.preventDefault();
     startX = e.clientX;
     startY = e.clientY;
@@ -413,7 +413,7 @@ function makeDraggable(el) {
   }
 }
 
-['msg-box', 'circle-box', 'cam-box', 'branding'].forEach(id =>
+['msg-box','circle-box','cam-box','branding'].forEach(id =>
   makeDraggable(document.getElementById(id))
 );
 
