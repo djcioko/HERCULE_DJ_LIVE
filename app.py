@@ -4,14 +4,14 @@ import numpy as np
 from PIL import Image
 import streamlit.components.v1 as components
 
-# Încercăm importul AI-ului (DeepFace)
+# ================= IMPORT AI =================
 try:
     from deepface import DeepFace
     AI_READY = True
 except ImportError:
     AI_READY = False
 
-# ================= CONFIGURARE & DESIGN =================
+# ================= CONFIG =================
 st.set_page_config(page_title="HERCULE AI - THE BEAST DJ", layout="wide")
 
 st.markdown("""
@@ -21,6 +21,7 @@ st.markdown("""
     .timer-box { font-size: 40px; font-weight: bold; color: #ff4b4b; text-align: center; border: 2px solid #ff4b4b; border-radius: 15px; padding: 10px; margin-bottom: 20px; }
     .btn-spotify { background-color: #1DB954; color: white; padding: 15px; border-radius: 30px; text-align: center; font-weight: bold; display: block; text-decoration: none; margin-bottom: 10px; font-size: 18px; }
     .btn-festify { background-color: #f25c05; color: white; padding: 15px; border-radius: 30px; text-align: center; font-weight: bold; display: block; text-decoration: none; font-size: 18px; }
+    .btn-youtube { background-color: #FF0000; color: white; padding: 15px; border-radius: 30px; text-align: center; font-weight: bold; display: block; text-decoration: none; font-size: 18px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -30,23 +31,15 @@ if "song" not in st.session_state: st.session_state.song = ""
 if "query" not in st.session_state: st.session_state.query = ""
 if "emotion" not in st.session_state: st.session_state.emotion = "Neutral"
 
-# ================= BAZA DE DATE (exemplu scurt) =================
+# ================= BAZA DE DATE =================
 MUSIC_DB = {
-    "happy": [
-        "Bruno Mars - Marry You", "Pharrell Williams - Happy", "Daft Punk - Get Lucky", "Village People - Y.M.C.A."
-    ],
-    "neutral": [
-        "Abba - Dancing Queen", "The Weeknd - Blinding Lights", "Dua Lipa - Levitating"
-    ],
-    "sad": [
-        "Adele - Someone Like You", "Holograf - Sa nu-mi iei niciodata dragostea"
-    ],
-    "angry": [
-        "AC/DC - Thunderstruck", "Metallica - Enter Sandman"
-    ]
+    "happy": ["Bruno Mars - Marry You", "Pharrell Williams - Happy", "Daft Punk - Get Lucky", "Village People - Y.M.C.A."],
+    "neutral": ["Abba - Dancing Queen", "The Weeknd - Blinding Lights", "Dua Lipa - Levitating"],
+    "sad": ["Adele - Someone Like You", "Holograf - Sa nu-mi iei niciodata dragostea"],
+    "angry": ["AC/DC - Thunderstruck", "Metallica - Enter Sandman"]
 }
 
-# ================= LOGICA AI =================
+# ================= FUNCTII =================
 def get_vibe(img):
     if not AI_READY: return "neutral"
     try:
@@ -55,7 +48,7 @@ def get_vibe(img):
     except:
         return "neutral"
 
-# ================= TIMER & AUTO-CAPTURE =================
+# ================= TIMER =================
 now = time.time()
 elapsed = now - st.session_state.last_time
 timp_ramas = max(0, 120 - int(elapsed))
@@ -65,9 +58,9 @@ if timp_ramas <= 0:
         """<script>window.parent.document.querySelectorAll('button[aria-label="Take Photo"]').forEach(btn => btn.click());</script>""",
         height=0
     )
-    st.session_state.last_time = time.time()  # Reset timer
+    st.session_state.last_time = time.time()  # reset timer
 
-# ================= INTERFAȚA =================
+# ================= INTERFATA =================
 st.title("🎰 HERCULE AI - THE ULTIMATE DJ ENGINE")
 
 col1, col2 = st.columns([1, 1.2])
@@ -88,33 +81,12 @@ with col1:
         emotion = get_vibe(img)
         st.session_state.emotion = emotion
         
-        # Alegem piesa din categoria detectată
         vibe_category = emotion if emotion in MUSIC_DB else "neutral"
         piesa = random.choice(MUSIC_DB[vibe_category])
         
         st.session_state.song = piesa
         st.session_state.query = urllib.parse.quote(piesa)
-        st.session_state.last_time = time.time()  # Reset timer
+        st.session_state.last_time = time.time()
         
         st.markdown(f"### 🎭 Emoție Detectată: **{emotion.upper()}**")
-        st.markdown(f"### 🎵 Melodie: **{piesa}**")
-        
-        # Butoane Directe
-        st.markdown(f"""
-            <a href="https://open.spotify.com/search/{st.session_state.query}" target="_blank" class="btn-spotify">🟢 ADĂUGARE ÎN SPOTIFY</a>
-            <a href="https://festify.us/party/-OMkDNoyn7nohBDBnLWm" target="_blank" class="btn-festify">🔥 DESCHIDE FESTIFY PARTY</a>
-        """, unsafe_allow_html=True)
-
-with col2:
-    st.subheader("📺 YouTube Player (Auto-Play Mode)")
-    if st.session_state.query:
-        yt_url = f"https://www.youtube.com/embed?listType=search&list={st.session_state.query}&autoplay=1"
-        st.markdown(f'<iframe width="100%" height="450" src="{yt_url}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>', unsafe_allow_html=True)
-        st.success(f"SE REDĂ: {st.session_state.song}")
-    else:
-        st.info("Sistemul așteaptă scanarea vizuală...")
-
-# Refresh pentru timer
-if timp_ramas > 0:
-    time.sleep(1)
-    st.rerun()
+        st.markdown(f"
