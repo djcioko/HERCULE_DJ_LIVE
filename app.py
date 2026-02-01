@@ -89,4 +89,32 @@ with col1:
         st.session_state.emotion = emotion
         
         # Alegem piesa din categoria detectată
-        vibe_category = emotion if emotion in MUSIC_DB el
+        vibe_category = emotion if emotion in MUSIC_DB else "neutral"
+        piesa = random.choice(MUSIC_DB[vibe_category])
+        
+        st.session_state.song = piesa
+        st.session_state.query = urllib.parse.quote(piesa)
+        st.session_state.last_time = time.time()  # Reset timer
+        
+        st.markdown(f"### 🎭 Emoție Detectată: **{emotion.upper()}**")
+        st.markdown(f"### 🎵 Melodie: **{piesa}**")
+        
+        # Butoane Directe
+        st.markdown(f"""
+            <a href="https://open.spotify.com/search/{st.session_state.query}" target="_blank" class="btn-spotify">🟢 ADĂUGARE ÎN SPOTIFY</a>
+            <a href="https://festify.us/party/-OMkDNoyn7nohBDBnLWm" target="_blank" class="btn-festify">🔥 DESCHIDE FESTIFY PARTY</a>
+        """, unsafe_allow_html=True)
+
+with col2:
+    st.subheader("📺 YouTube Player (Auto-Play Mode)")
+    if st.session_state.query:
+        yt_url = f"https://www.youtube.com/embed?listType=search&list={st.session_state.query}&autoplay=1"
+        st.markdown(f'<iframe width="100%" height="450" src="{yt_url}" frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe>', unsafe_allow_html=True)
+        st.success(f"SE REDĂ: {st.session_state.song}")
+    else:
+        st.info("Sistemul așteaptă scanarea vizuală...")
+
+# Refresh pentru timer
+if timp_ramas > 0:
+    time.sleep(1)
+    st.rerun()
